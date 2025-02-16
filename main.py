@@ -2,8 +2,15 @@ import telebot
 import vk_api
 import requests
 import time
-import threading
+import threading, asyncio
 from telebot.types import Message
+import logging
+logging.basicConfig(
+    level=logging.DEBUG, 
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    filename="log.log",  # Запись в файл
+    filemode="w"  # "w" - перезапись, "a" - добавление в файл
+)
 
 # 🔹 Токены
 TELEGRAM_TOKEN = '8156604929:AAEZvaMT1_Gvlcy9T5LpDoD0Xf8TztdBkCA'
@@ -89,8 +96,10 @@ def send_to_vk(message_id):
 
         vk.wall.post(owner_id=f"-{VK_GROUP_ID}", message=post_text, attachments=",".join(attachments))
         print(f"✅ Пост отправлен в VK! (ID: {message_id})")
+        logging.info(f"✅ Пост отправлен в VK! (ID: {message_id})")
     except Exception as e:
         print(f"❌ Ошибка отправки поста: {e}")
+        logging.info(f"❌ Ошибка отправки поста: {e}")
 
 # 🔹 Обработчик постов
 @bot.channel_post_handler(content_types=['text', 'photo', 'video', 'audio', 'poll'])
@@ -125,4 +134,13 @@ def forward_to_vk(message: Message):
 
 # 🔹 Запуск бота
 print("🤖 Бот запущен...")
-bot.polling(none_stop=True)
+logging.info("🤖 Бот запущен...")
+
+while True:
+    try:
+        bot.polling(non_stop=False)
+    except Exception as e:
+        logging.critical(e)
+        asyncio.run(bot.sendMessage(5318464880, f"Ошибка {e}"))
+        with open("log.log", "rb") as f:
+            bot.send_document(5318464880, f, caption="Документ для вас!")
