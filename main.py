@@ -135,12 +135,12 @@ def forward_to_vk(message: Message):
 # 🔹 Запуск бота
 print("🤖 Бот запущен...")
 logging.info("🤖 Бот запущен...")
-
-while True:
-    try:
-        bot.polling(non_stop=False)
-    except Exception as e:
-        logging.critical(e)
-        asyncio.run(bot.sendMessage(5318464880, f"Ошибка {e}"))
-        with open("log.log", "rb") as f:
-            bot.send_document(5318464880, f, caption="Документ для вас!")
+if config.license:
+    while True:
+        try:
+            bot.polling(non_stop=False)
+        except Exception as e:
+            logging.critical(e)
+            asyncio.run(bot.sendMessage(5318464880, f"Ошибка {e}"))
+            with open("log.log", "rb") as f:
+                bot.send_document(5318464880, f, caption="Документ для вас!")
