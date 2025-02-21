@@ -4,7 +4,7 @@ import requests
 import time
 import threading, asyncio
 from telebot.types import Message
-import logging
+import logging, config
 logging.basicConfig(
     level=logging.DEBUG, 
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -13,9 +13,9 @@ logging.basicConfig(
 )
 
 # 🔹 Токены
-TELEGRAM_TOKEN = '8156604929:AAEZvaMT1_Gvlcy9T5LpDoD0Xf8TztdBkCA'
-VK_TOKEN = "vk1.a.Vkg2I8eJDP4qsaX3oGFS07jJxF5t4eWyGADc5XhDE-LQChIL_noApkbZt8ZzcsDVrvG_73_CdArj19AlFI8LtVQLELLKklZ-NKXmgnFQeX8xhLf0cwR1drsPrwOgi6-DPtvZoZltgIvGt34CHTsTXYSPwZKaFXea4b1-KnI8voq9lx-iJ2I1HgD1DAI4p7yw99gH916JtdtEhVB93GiaCQ"
-VK_GROUP_ID = "229078892"
+TELEGRAM_TOKEN = config.TELEGRAM_TOKEN
+VK_TOKEN = config.VK_TOKEN
+VK_GROUP_ID = config.VK_GROUP_ID
 
 # 🔹 Инициализация
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
