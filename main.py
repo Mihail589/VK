@@ -4,9 +4,10 @@ import requests
 import time
 import threading, asyncio
 from telebot.types import Message
-import logging, config
+import logging
+import config
 logging.basicConfig(
-    level=logging.DEBUG, 
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
     filename="log.log",  # Запись в файл
     filemode="w"  # "w" - перезапись, "a" - добавление в файл
@@ -16,7 +17,7 @@ logging.basicConfig(
 TELEGRAM_TOKEN = config.TELEGRAM_TOKEN
 VK_TOKEN = config.VK_TOKEN
 VK_GROUP_ID = config.VK_GROUP_ID
-
+print(VK_TOKEN)
 # 🔹 Инициализация
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 vk_session = vk_api.VkApi(token=VK_TOKEN)
@@ -41,9 +42,9 @@ def upload_photos_to_vk(photo_files):
         return []
 
 # 🔹 Функция загрузки видео
-def upload_video_to_vk(video_file):
+def upload_video_to_vk(video_file, text):
     try:
-        upload_url = vk.video.save(group_id=VK_GROUP_ID, name='Uploaded Video', description='Video from Telegram')['upload_url']
+        upload_url = vk.video.save(group_id=VK_GROUP_ID, name='Uploaded Video', description=text)['upload_url']
         video_data = requests.get(video_file).content
         response = requests.post(upload_url, files={'file': video_data}).json()
         return f"video{response['owner_id']}_{response['id']}"
@@ -69,16 +70,13 @@ def send_to_vk(message_id):
         if message_id not in pending_posts:
             return
         text, media_files, video_files, audio_files, poll_data = pending_posts.pop(message_id)
-    
+
     # Проверяем, есть ли запрещенные теги
-    if text and any(tag in text.lower() for tag in ['#мысли', '#мемы']):
-        print(f"⚠️ Пост с тегами {text} не был отправлен в VK.")
-        return
 
     attachments = upload_photos_to_vk(media_files) if media_files else []
     audio_attachment = upload_audio_to_vk(audio_files[0]) if audio_files else None
-    video_attachment = upload_video_to_vk(video_files[0]) if video_files else None
-    
+    video_attachment = upload_video_to_vk(video_files[0], text) if video_files else None
+
     try:
         post_text = text or ""
         if audio_attachment:
@@ -94,7 +92,7 @@ def send_to_vk(message_id):
                 is_anonymous=1,
             )
 
-        vk.wall.post(owner_id=f"-{VK_GROUP_ID}", message=post_text, attachments=",".join(attachments))
+        vk.wall.post(owner_id=f"-{VK_GROUP_ID}", message=post_text, attachments=",".join(attachments), from_group=1)
         print(f"✅ Пост отправлен в VK! (ID: {message_id})")
         logging.info(f"✅ Пост отправлен в VK! (ID: {message_id})")
     except Exception as e:
@@ -104,17 +102,17 @@ def send_to_vk(message_id):
 # 🔹 Обработчик постов
 @bot.channel_post_handler(content_types=['text', 'photo', 'video', 'audio', 'poll'])
 def forward_to_vk(message: Message):
-    message_id = message.message_id  
-    text = message.text or message.caption  
+    message_id = message.message_id
+    text = message.text or message.caption
 
-    if not text and message.content_type != 'video' and message.content_type != "poll" and message.content_type != "audio":
+    if not text and message.content_type != 'video' and message.content_type != "poll" and message.content_type != "audio" and text != "Календарь Счастья 🙌":
         return
 
     media_files = []
     video_files = []
     audio_files = []
     poll_data = None
-    
+
     if message.content_type == 'photo':
         media_files = [f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{bot.get_file(message.photo[-1].file_id).file_path}"]
     elif message.content_type == 'video':
@@ -135,12 +133,12 @@ def forward_to_vk(message: Message):
 # 🔹 Запуск бота
 print("🤖 Бот запущен...")
 logging.info("🤖 Бот запущен...")
-if config.license:
-    while True:
-        try:
-            bot.polling(non_stop=False)
-        except Exception as e:
-            logging.critical(e)
-            asyncio.run(bot.sendMessage(5318464880, f"Ошибка {e}"))
-            with open("log.log", "rb") as f:
-                bot.send_document(5318464880, f, caption="Документ для вас!")
+
+while True:
+    try:
+        bot.polling(non_stop=False)
+    except Exception as e:
+        logging.critical(e)
+        asyncio.run(bot.send_message(5318464880, f"Ошибка {e}"))
+        with open("log.log", "rb") as f:
+            bot.send_document(5318464880, f, caption="Документ для вас!")
